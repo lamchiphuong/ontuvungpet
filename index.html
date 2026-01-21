@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ÔN TẬP TỪ VỰNG TIẾNG ANH</title>
+    
+    <!-- Open Graph / Preview khi chia sẻ link -->
+    <meta property="og:title" content="ÔN TẬP TỪ VỰNG TIẾNG ANH">
+    <meta property="og:description" content="Hãy ôn tập từ vựng tiếng Anh bằng cách không để chữ rơi mất.">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/10431/10431322.png">
+    <meta property="og:type" content="website">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/5780/5780484.png" type="image/png">
+    
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(to bottom, #a0e7ff, #ffffff);
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
+        h1 {
+            color: #1e3d59;
+            margin: 10px 0;
+            font-size: 28px;
+        }
+        #score, #progress, #message {
+            margin: 5px 0;
+            font-size: 24px;
+        }
+        #progress {
+            font-weight: bold;
+            color: #4a90e2;
+        }
+        #message {
+            min-height: 35px;
+            font-weight: bold;
+        }
+        #game-area {
+            margin: 10px auto;
+            width: 700px;
+            max-width: 95vw;
+            height: 350px;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: #ffffff;
+        }
+        #vietnamese-word {
+            position: absolute;
+            font-size: 40px;
+            font-weight: bold;
+            color: #1e3d59;
+            left: 50%;
+            transform: translateX(-50%);
+            top: -80px;
+            animation: fall linear forwards;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
+        @keyframes fall {
+            to { top: 370px; }
+        }
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 30px;
+            font-weight: bold;
+            color: #e74c3c;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        #input-area {
+            margin: 10px auto;
+            padding: 15px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 15px;
+            width: 700px;
+            max-width: 95vw;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #letters-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+        .letter-box {
+            width: 50px;
+            height: 60px;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 60px;
+            margin: 6px;
+            border: 3px solid #4a90e2;
+            border-radius: 10px;
+            background-color: #f0f8ff;
+            color: #1e3d59;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .letter-box.filled {
+            background-color: #4a90e2;
+            color: white;
+        }
+        .letter-box.correct {
+            background-color: #2ecc71;
+            border-color: #27ae60;
+        }
+        .letter-box.wrong {
+            background-color: #e74c3c;
+            border-color: #c0392b;
+        }
+        .letter-box.space {
+            background-color: #bdc3c7;
+            border-color: #95a5a6;
+            color: #7f8c8d;
+        }
+        .letter-box.hint {
+            background-color: #f39c12;
+            border-color: #e67e22;
+            color: white;
+        }
+        #hidden-input {
+            position: absolute;
+            left: -9999px;
+        }
+        #start-btn, #hint-btn {
+            font-size: 22px;
+            padding: 12px 30px;
+            margin: 10px;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(74,144,226,0.4);
+            transition: 0.3s;
+        }
+        #hint-btn {
+            background: #f39c12;
+            display: none;
+        }
+        #start-btn:hover, #hint-btn:hover {
+            transform: translateY(-3px);
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+        }
+        #result-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 101;
+            display: none;
+            max-width: 90%;
+            width: 500px;
+        }
+        #result-popup h2 {
+            font-size: 36px;
+            color: #1e3d59;
+            margin: 0 0 20px;
+        }
+        #result-popup p {
+            font-size: 24px;
+            margin: 15px 0;
+        }
+        #play-again-btn {
+            font-size: 20px;
+            padding: 12px 30px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ôn Từ Vựng Tiếng Anh - Rơi Từ</h1>
+    <button id="start-btn">Bắt Đầu</button>
+    <div id="score">Điểm: 0</div>
+    <div id="progress">Từ đã hoàn thành: 0 / 0</div> <!-- MỚI: Hiển thị tiến trình -->
+    <div id="message"></div>
+    <div id="game-area"></div>
+    <div id="input-area">
+        <div id="letters-container"></div>
+    </div>
+    <button id="hint-btn">Gợi ý</button>
+    <input type="text" id="hidden-input" autocomplete="off">
+
+    <div id="overlay"></div>
+    <div id="result-popup">
+        <h2>🎉 Hoàn Thành! 🎉</h2>
+        <p id="final-score"></p>
+        <p id="hint-count"></p>
+        <p id="total-time"></p>
+        <button id="play-again-btn">Chơi Lại</button>
+    </div>
+
+    <script>
+        const originalWords = [
+            { "vi": "lặn", "en": "dive" },
+            { "vi": "làm", "en": "do" },
+            { "vi": "đi", "en": "go" },
+            { "vi": "chơi", "en": "play" },
+            { "vi": "đăng (bài)", "en": "post" },
+            { "vi": "đi xe / cưỡi", "en": "ride" },
+            { "vi": "nhìn thấy", "en": "see" },
+            { "vi": "lấy / mang", "en": "take" },
+            { "vi": "ở trên", "en": "above" },
+            { "vi": "ở phía sau", "en": "behind" },
+            { "vi": "ở phía trước", "en": "in front of" },
+            { "vi": "ở bên trong", "en": "inside" },
+            { "vi": "ở bên cạnh", "en": "next to" },
+            { "vi": "ở trên (tiếp xúc)", "en": "on" },
+            { "vi": "ở bên phải", "en": "on the right" },
+            { "vi": "đối diện", "en": "opposite" },
+            { "vi": "ở phía dưới", "en": "under" },
+            { "vi": "có khả năng chi trả", "en": "afford" },
+            { "vi": "đồng ý", "en": "agree" },
+            { "vi": "quyết định", "en": "decide" },
+            { "vi": "thích / tận hưởng", "en": "enjoy" },
+            { "vi": "thích / muốn (không trang trọng)", "en": "fancy" },
+            { "vi": "cảm thấy muốn", "en": "feel like" },
+            { "vi": "hoàn thành / kết thúc", "en": "finish" },
+            { "vi": "hy vọng", "en": "hope" },
+            { "vi": "học / học cách", "en": "learn" },
+            { "vi": "phiền / bận tâm", "en": "mind" },
+            { "vi": "nhớ / bỏ lỡ", "en": "miss" },
+            { "vi": "luyện tập", "en": "practise" },
+            { "vi": "hứa", "en": "promise" },
+            { "vi": "muốn", "en": "want" },
+            { "vi": "muốn (lịch sự)", "en": "would like" },
+            { "vi": "bị hỏng, trục trặc (máy móc, xe cộ)", "en": "break down" },
+            { "vi": "giống ai đó trong gia đình", "en": "take after" },
+            { "vi": "ăn mặc đẹp, diện đồ", "en": "dress up" },
+            { "vi": "ngưỡng mộ, kính trọng", "en": "look up to" },
+            { "vi": "chăm sóc, trông nom", "en": "look after" },
+            { "vi": "khoe khoang", "en": "show off" },
+            { "vi": "có mối quan hệ tốt với", "en": "get on with" },
+            { "vi": "đăng ký tham gia", "en": "sign up for" },
+            { "vi": "mong chờ, háo hức", "en": "look forward to" },
+            { "vi": "từ bỏ", "en": "give up" },
+            { "vi": "bắt đầu (sở thích, môn thể thao)", "en": "take up" },
+            { "vi": "tham gia (hoạt động chung)", "en": "join in" },
+            { "vi": "ghi tên xuống, đăng ký", "en": "put down" },
+            { "vi": "khởi hành", "en": "set off" },
+            { "vi": "tiếp tục", "en": "go on" },
+            { "vi": "reo, kêu (chuông); nổ; hỏng", "en": "go off" },
+            { "vi": "tìm ra, phát hiện ra", "en": "find out" },
+            { "vi": "cờ vua", "en": "chess" },
+            { "vi": "cắm trại", "en": "camping" },
+            { "vi": "nấu ăn", "en": "cooking" },
+            { "vi": "đạp xe", "en": "cycling" },
+            { "vi": "âm nhạc", "en": "music" },
+            { "vi": "vẽ tranh", "en": "painting" },
+            { "vi": "chụp ảnh", "en": "photography" },
+            { "vi": "ba lô", "en": "backpack" },
+            { "vi": "xe đạp", "en": "bike" },
+            { "vi": "bàn cờ", "en": "board" },
+            { "vi": "cây cọ vẽ", "en": "brush" },
+            { "vi": "máy ảnh", "en": "camera" },
+            { "vi": "xe cắm trại", "en": "camper" },
+            { "vi": "người chơi cờ vua", "en": "chess player" },
+            { "vi": "đầu bếp", "en": "cook" },
+            { "vi": "nồi", "en": "cooker" },
+            { "vi": "người đạp xe", "en": "cyclist" },
+            { "vi": "mũ bảo hiểm", "en": "helmet" },
+            { "vi": "nhạc cụ", "en": "instrument" },
+            { "vi": "nhạc sĩ", "en": "musician" },
+            { "vi": "lò nướng", "en": "oven" },
+            { "vi": "sơn / vẽ", "en": "paint" },
+            { "vi": "họa sĩ", "en": "painter" },
+            { "vi": "nhiếp ảnh gia", "en": "photographer" },
+            { "vi": "quân cờ", "en": "pieces" },
+            { "vi": "lều", "en": "tent" }
+        ];
+
+        let words = [];
+        let currentWord = null;
+        let score = 0;
+        let hintCount = 0;
+        let hintedIndices = [];
+        let completedCount = 0; // Đếm số từ đã hoàn thành (đúng/sai/hết giờ)
+        const totalWords = originalWords.length;
+        const duration = 30000;
+        let startTime = null;
+        let timerInterval = null;
+        let timeoutId = null;
+
+        const gameArea = document.getElementById('game-area');
+        const lettersContainer = document.getElementById('letters-container');
+        const hiddenInput = document.getElementById('hidden-input');
+        const scoreDisplay = document.getElementById('score');
+        const progressDisplay = document.getElementById('progress'); // MỚI
+        const messageDisplay = document.getElementById('message');
+        const startBtn = document.getElementById('start-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const overlay = document.getElementById('overlay');
+        const resultPopup = document.getElementById('result-popup');
+        const finalScoreText = document.getElementById('final-score');
+        const hintCountText = document.getElementById('hint-count');
+        const totalTimeText = document.getElementById('total-time');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        let boxes = [];
+        let timerDisplay = null;
+
+        function updateProgress() {
+            progressDisplay.textContent = `Từ đã hoàn thành: ${completedCount} / ${totalWords}`;
+        }
+
+        function startGame() {
+            startBtn.style.display = 'none';
+            hintBtn.style.display = 'inline-block';
+            score = 0;
+            hintCount = 0;
+            completedCount = 0;
+            scoreDisplay.textContent = 'Điểm: 0';
+            updateProgress();
+            messageDisplay.textContent = '';
+            words = [...originalWords];
+            startTime = Date.now();
+            nextWord();
+        }
+
+        function nextWord() {
+            if (words.length === 0) {
+                showResult();
+                return;
+            }
+
+            const idx = Math.floor(Math.random() * words.length);
+            currentWord = words[idx];
+            words.splice(idx, 1);
+            hintedIndices = [];
+
+            gameArea.innerHTML = '';
+            timerDisplay = document.createElement('div');
+            timerDisplay.id = 'timer';
+            gameArea.appendChild(timerDisplay);
+
+            const wordEl = document.createElement('div');
+            wordEl.id = 'vietnamese-word';
+            wordEl.textContent = currentWord.vi;
+            gameArea.appendChild(wordEl);
+            wordEl.style.animation = `fall ${duration / 1000}s linear forwards`;
+
+            lettersContainer.innerHTML = '';
+            boxes = [];
+
+            for (let i = 0; i < currentWord.en.length; i++) {
+                const box = document.createElement('div');
+                box.className = 'letter-box';
+                if (currentWord.en[i] === ' ') {
+                    box.classList.add('space');
+                    box.textContent = '␣';
+                }
+                lettersContainer.appendChild(box);
+                boxes.push(box);
+            }
+
+            hiddenInput.value = '';
+            hiddenInput.focus();
+            updateBoxes();
+            messageDisplay.textContent = '';
+
+            let timeLeft = 30;
+            timerDisplay.textContent = timeLeft;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 10) {
+                    timerDisplay.style.color = '#ff0000';
+                    timerDisplay.style.animation = 'pulse 0.8s infinite';
+                }
+            }, 1000);
+
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(revealAnswer, duration);
+        }
+
+        function updateBoxes() {
+            const typed = hiddenInput.value.toUpperCase();
+            let typedIndex = 0;
+
+            boxes.forEach((box, boxIndex) => {
+                if (currentWord.en[boxIndex] === ' ') return;
+
+                const letterIndex = getLetterIndex(boxIndex);
+
+                if (hintedIndices.includes(letterIndex)) {
+                    box.textContent = currentWord.en[boxIndex].toUpperCase();
+                    box.className = 'letter-box hint filled';
+                } else {
+                    const char = typed[typedIndex] || '';
+                    box.textContent = char;
+                    box.className = 'letter-box';
+                    if (char) box.classList.add('filled');
+                    typedIndex++;
+                }
+            });
+        }
+
+        function getLetterIndex(boxIndex) {
+            let count = 0;
+            for (let i = 0; i <= boxIndex; i++) {
+                if (currentWord.en[i] !== ' ') count++;
+            }
+            return count - 1;
+        }
+
+        function giveHint() {
+            const cleanAnswer = currentWord.en.replace(/ /g, '').toUpperCase();
+            const currentTyped = getCurrentTyped();
+
+            for (let i = 0; i < cleanAnswer.length; i++) {
+                if (!hintedIndices.includes(i) && (currentTyped[i] || '') !== cleanAnswer[i]) {
+                    hintedIndices.push(i);
+                    hintCount++;
+                    updateBoxes();
+
+                    if (getCurrentTyped() === cleanAnswer) {
+                        checkAnswer();
+                    }
+                    break;
+                }
+            }
+
+            hiddenInput.focus();
+        }
+
+        function getCurrentTyped() {
+            let result = '';
+            let typedIndex = 0;
+
+            for (let i = 0; i < currentWord.en.length; i++) {
+                if (currentWord.en[i] === ' ') continue;
+
+                const letterIndex = getLetterIndex(i);
+
+                if (hintedIndices.includes(letterIndex)) {
+                    result += currentWord.en[i].toUpperCase();
+                } else {
+                    result += (hiddenInput.value.toUpperCase()[typedIndex] || '');
+                    typedIndex++;
+                }
+            }
+            return result;
+        }
+
+        function completeCurrentWord() {
+            completedCount++;
+            updateProgress();
+        }
+
+        function checkAnswer() {
+            if (!timeoutId) return;
+            clearTimeout(timeoutId);
+            clearInterval(timerInterval);
+            timeoutId = null;
+
+            const correct = currentWord.en.replace(/ /g, '').toUpperCase();
+            const current = getCurrentTyped();
+
+            if (current === correct) {
+                score++;
+                scoreDisplay.textContent = `Điểm: ${score}`;
+                messageDisplay.textContent = '🎉 Đúng rồi! +1 điểm 🎉';
+                messageDisplay.style.color = '#2ecc71';
+                boxes.forEach(box => {
+                    if (!box.classList.contains('space')) {
+                        box.classList.remove('hint');
+                        box.classList.add('correct');
+                    }
+                });
+            } else {
+                messageDisplay.textContent = `❌ Sai rồi! Đáp án: ${currentWord.en}`;
+                messageDisplay.style.color = '#e74c3c';
+                boxes.forEach((box, i) => {
+                    if (currentWord.en[i] !== ' ') {
+                        box.textContent = currentWord.en[i].toUpperCase();
+                        box.classList.remove('hint');
+                        box.classList.add('wrong');
+                    }
+                });
+            }
+
+            completeCurrentWord(); // Cập nhật tiến trình
+            setTimeout(nextWord, 2500);
+        }
+
+        function revealAnswer() {
+            clearInterval(timerInterval);
+            timeoutId = null;
+            messageDisplay.textContent = `⏰ Hết giờ! Đáp án: ${currentWord.en}`;
+            messageDisplay.style.color = '#f39c12';
+
+            boxes.forEach((box, i) => {
+                if (currentWord.en[i] !== ' ') {
+                    box.textContent = currentWord.en[i].toUpperCase();
+                    box.style.backgroundColor = '#f39c12';
+                    box.style.borderColor = '#e67e22';
+                    box.style.color = 'white';
+                    box.classList.remove('hint');
+                }
+            });
+
+            completeCurrentWord(); // Cập nhật tiến trình
+            setTimeout(nextWord, 3000);
+        }
+
+        function showResult() {
+            clearInterval(timerInterval);
+            const totalTime = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(totalTime / 60);
+            const seconds = totalTime % 60;
+            const timeStr = `${minutes} phút ${seconds.toString().padStart(2, '0')} giây`;
+
+            finalScoreText.innerHTML = `✅ Đúng: <strong>${score}</strong> / ${totalWords}<br>❌ Sai/Hết giờ: <strong>${totalWords - score}</strong>`;
+            hintCountText.textContent = `💡 Số lần dùng gợi ý: ${hintCount}`;
+            totalTimeText.textContent = `⏱ Tổng thời gian: ${timeStr}`;
+
+            overlay.style.display = 'block';
+            resultPopup.style.display = 'block';
+            hintBtn.style.display = 'none';
+        }
+
+        hiddenInput.addEventListener('input', () => {
+            const totalLettersNeeded = currentWord.en.replace(/ /g, '').length;
+            const hintedCount = hintedIndices.length;
+            const maxAllowedInput = totalLettersNeeded - hintedCount;
+
+            if (hiddenInput.value.length > maxAllowedInput) {
+                hiddenInput.value = hiddenInput.value.slice(0, maxAllowedInput);
+            }
+
+            updateBoxes();
+
+            const currentTypedLength = getCurrentTyped().length;
+            if (currentTypedLength === totalLettersNeeded) {
+                checkAnswer();
+            }
+        });
+
+        hiddenInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                const currentTypedLength = getCurrentTyped().length;
+                const totalLettersNeeded = currentWord.en.replace(/ /g, '').length;
+                if (currentTypedLength > 0 && currentTypedLength <= totalLettersNeeded) {
+                    checkAnswer();
+                }
+            }
+        });
+
+        hintBtn.addEventListener('click', giveHint);
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            overlay.style.display = 'none';
+            resultPopup.style.display = 'none';
+            startGame();
+        });
+
+        gameArea.addEventListener('click', () => hiddenInput.focus());
+        lettersContainer.addEventListener('click', () => hiddenInput.focus());
+    </script>
+</body>
+</html>
