@@ -215,10 +215,10 @@
     </style>
 </head>
 <body>
-    <h1>Ôn Từ Vựng Tiếng Anh - ĐỪNG ĐỂ CHỮ RƠI</h1>
+    <h1>Ôn Từ Vựng Tiếng Anh - ĐỪNG ĐỂ TỪ RƠI</h1>
     <button id="start-btn">Bắt Đầu</button>
     <div id="score">Điểm: 0</div>
-    <div id="progress">Từ đã hoàn thành: 0 / 0</div> <!-- MỚI: Hiển thị tiến trình -->
+    <div id="progress">Từ đã làm: 0 / 0</div>
     <div id="message"></div>
     <div id="game-area"></div>
     <div id="input-area">
@@ -299,7 +299,7 @@
             { "vi": "bàn cờ", "en": "board" },
             { "vi": "cây cọ vẽ", "en": "brush" },
             { "vi": "máy ảnh", "en": "camera" },
-            { "vi": "người cắm trại", "en": "camper" },
+            { "vi": "xe cắm trại", "en": "camper" },
             { "vi": "người chơi cờ vua", "en": "chess player" },
             { "vi": "đầu bếp", "en": "cook" },
             { "vi": "nồi", "en": "cooker" },
@@ -319,8 +319,11 @@
         let currentWord = null;
         let score = 0;
         let hintCount = 0;
+        let hintCountThisWord = 0;
+        let totalLettersNeeded = 0;
         let hintedIndices = [];
-        let completedCount = 0; // Đếm số từ đã hoàn thành (đúng/sai/hết giờ)
+        let completedCount = 0;
+        let lastHintCompletedTheWord = false; // MỚI: Đánh dấu lần hint cuối có làm hoàn thành từ không
         const totalWords = originalWords.length;
         const duration = 30000;
         let startTime = null;
@@ -331,7 +334,7 @@
         const lettersContainer = document.getElementById('letters-container');
         const hiddenInput = document.getElementById('hidden-input');
         const scoreDisplay = document.getElementById('score');
-        const progressDisplay = document.getElementById('progress'); // MỚI
+        const progressDisplay = document.getElementById('progress');
         const messageDisplay = document.getElementById('message');
         const startBtn = document.getElementById('start-btn');
         const hintBtn = document.getElementById('hint-btn');
@@ -346,7 +349,7 @@
         let timerDisplay = null;
 
         function updateProgress() {
-            progressDisplay.textContent = `Từ đã hoàn thành: ${completedCount} / ${totalWords}`;
+            progressDisplay.textContent = `Từ đã làm: ${completedCount} / ${totalWords}`;
         }
 
         function startGame() {
@@ -373,6 +376,10 @@
             currentWord = words[idx];
             words.splice(idx, 1);
             hintedIndices = [];
+            hintCountThisWord = 0;
+            lastHintCompletedTheWord = false;
+
+            totalLettersNeeded = currentWord.en.replace(/ /g, '').length;
 
             gameArea.innerHTML = '';
             timerDisplay = document.createElement('div');
@@ -452,19 +459,27 @@
 
         function giveHint() {
             const cleanAnswer = currentWord.en.replace(/ /g, '').toUpperCase();
-            const currentTyped = getCurrentTyped();
+            const currentTypedBefore = getCurrentTyped();
+
+            // Kiểm tra xem trước khi hint có đầy đủ chưa
+            const wasCompleteBefore = currentTypedBefore === cleanAnswer;
 
             for (let i = 0; i < cleanAnswer.length; i++) {
-                if (!hintedIndices.includes(i) && (currentTyped[i] || '') !== cleanAnswer[i]) {
+                if (!hintedIndices.includes(i) && (currentTypedBefore[i] || '') !== cleanAnswer[i]) {
                     hintedIndices.push(i);
                     hintCount++;
+                    hintCountThisWord++;
                     updateBoxes();
-
-                    if (getCurrentTyped() === cleanAnswer) {
-                        checkAnswer();
-                    }
                     break;
                 }
+            }
+
+            const currentTypedAfter = getCurrentTyped();
+
+            // Nếu sau lần hint này mới đủ từ → đánh dấu là hint cuối hoàn thành
+            if (!wasCompleteBefore && currentTypedAfter === cleanAnswer) {
+                lastHintCompletedTheWord = true;
+                checkAnswer(); // Tự động chấm và qua từ mới
             }
 
             hiddenInput.focus();
@@ -503,7 +518,8 @@
             const correct = currentWord.en.replace(/ /g, '').toUpperCase();
             const current = getCurrentTyped();
 
-            if (current === correct) {
+            if (current === correct && !lastHintCompletedTheWord) {
+                // Đúng và không phải hint cuối hoàn thành → + điểm
                 score++;
                 scoreDisplay.textContent = `Điểm: ${score}`;
                 messageDisplay.textContent = '🎉 Đúng rồi! +1 điểm 🎉';
@@ -512,6 +528,15 @@
                     if (!box.classList.contains('space')) {
                         box.classList.remove('hint');
                         box.classList.add('correct');
+                    }
+                });
+            } else if (current === correct && lastHintCompletedTheWord) {
+                // Đúng nhưng do hint cuối hoàn thành → không điểm
+                messageDisplay.textContent = '✅ Đúng nhưng dùng gợi ý chữ cuối – Không tính điểm';
+                messageDisplay.style.color = '#f39c12';
+                boxes.forEach(box => {
+                    if (!box.classList.contains('space')) {
+                        box.classList.add('hint');
                     }
                 });
             } else {
@@ -526,8 +551,8 @@
                 });
             }
 
-            completeCurrentWord(); // Cập nhật tiến trình
-            setTimeout(nextWord, 2500);
+            completeCurrentWord();
+            setTimeout(nextWord, lastHintCompletedTheWord ? 3000 : 2500);
         }
 
         function revealAnswer() {
@@ -546,7 +571,7 @@
                 }
             });
 
-            completeCurrentWord(); // Cập nhật tiến trình
+            completeCurrentWord();
             setTimeout(nextWord, 3000);
         }
 
@@ -557,7 +582,7 @@
             const seconds = totalTime % 60;
             const timeStr = `${minutes} phút ${seconds.toString().padStart(2, '0')} giây`;
 
-            finalScoreText.innerHTML = `✅ Đúng: <strong>${score}</strong> / ${totalWords}<br>❌ Sai/Hết giờ: <strong>${totalWords - score}</strong>`;
+            finalScoreText.innerHTML = `✅ Đúng (có điểm): <strong>${score}</strong> / ${totalWords}<br>❌ Sai/Hết giờ/Gợi ý chữ cuối: <strong>${totalWords - score}</strong>`;
             hintCountText.textContent = `💡 Số lần dùng gợi ý: ${hintCount}`;
             totalTimeText.textContent = `⏱ Tổng thời gian: ${timeStr}`;
 
@@ -567,7 +592,6 @@
         }
 
         hiddenInput.addEventListener('input', () => {
-            const totalLettersNeeded = currentWord.en.replace(/ /g, '').length;
             const hintedCount = hintedIndices.length;
             const maxAllowedInput = totalLettersNeeded - hintedCount;
 
@@ -579,6 +603,7 @@
 
             const currentTypedLength = getCurrentTyped().length;
             if (currentTypedLength === totalLettersNeeded) {
+                lastHintCompletedTheWord = false; // Nếu tự gõ đủ → chắc chắn không phải hint cuối
                 checkAnswer();
             }
         });
@@ -586,8 +611,8 @@
         hiddenInput.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 const currentTypedLength = getCurrentTyped().length;
-                const totalLettersNeeded = currentWord.en.replace(/ /g, '').length;
                 if (currentTypedLength > 0 && currentTypedLength <= totalLettersNeeded) {
+                    lastHintCompletedTheWord = false;
                     checkAnswer();
                 }
             }
